@@ -83,12 +83,25 @@ var mydb = {
 	"_OldBIN": 0
 };
 
+var cached = null;
+var CACHE_ENABLED = true;
+
 // Read binary data
 function readbin(readbytes, pos, readtype, isbigint) {
-	var buff = new Buffer(readbytes);
-	var fd = fs.openSync(binfile, 'r');
-	totalread = fs.readSync(fd, buff, 0, readbytes, pos);
-	fs.closeSync(fd);
+    var buff = null;
+    var totalread = 0;
+    if (CACHE_ENABLED) {
+        if (!cached) {
+            cached = fs.readFileSync(binfile);
+        }
+        buff = cached.slice(pos, pos+readbytes);
+        totalread = readbytes;
+    } else {
+        buff = new Buffer(readbytes);
+        var fd = fs.openSync(binfile, 'r');
+        totalread = fs.readSync(fd, buff, 0, readbytes, pos);
+        fs.closeSync(fd);
+    }
 	
 	if (totalread == readbytes) {
 		switch (readtype) {
